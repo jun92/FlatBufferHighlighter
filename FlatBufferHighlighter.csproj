@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.VisualStudio.Sdk.Build/17.5.4074">
+
+  <PropertyGroup>
+    <TargetFramework>vs17.0</TargetFramework>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <DeployExtension>true</DeployExtension>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.Composition" />
+  </ItemGroup>
+
+
+</Project>
+
+
+

@@ -6,6 +6,7 @@
     <DeployExtension>true</DeployExtension>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
+    <RestoreUseLegacyDependencyResolver>true</RestoreUseLegacyDependencyResolver>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,10 +3,10 @@ name: Build and Release VSIX
 on:
   push:
     branches: [ "main", "master" ]
-    tags:
-      - "v*"
   pull_request:
     branches: [ "main", "master" ]
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -33,10 +33,11 @@ jobs:
         name: FlatBufferHighlighter-VSIX
         path: bin/Release/vs17.0/FlatBufferHighlighter.vsix
 
-    - name: Create Release and Upload Asset
-      if: startsWith(github.ref, 'refs/tags/v')
+    - name: Upload VSIX to Release
+      if: github.event_name == 'release'
       uses: softprops/action-gh-release@v2
       with:
         files: bin/Release/vs17.0/FlatBufferHighlighter.vsix
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

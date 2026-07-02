@@ -21,11 +21,8 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v2
-
     - name: Restore NuGet Packages
-      run: nuget restore FlatBufferHighlighter.csproj
+      run: dotnet restore FlatBufferHighlighter.csproj
 
     - name: Build VSIX
       run: msbuild FlatBufferHighlighter.csproj /p:Configuration=Release /p:DeployExtension=false /p:CreateVsixContainer=true

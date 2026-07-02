@@ -1,0 +1,45 @@
+name: Build and Release VSIX
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Restore NuGet Packages
+      run: nuget restore FlatBufferHighlighter.csproj
+
+    - name: Build VSIX
+      run: msbuild FlatBufferHighlighter.csproj /p:Configuration=Release /p:DeployExtension=false /p:CreateVsixContainer=true
+
+    - name: Upload VSIX Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FlatBufferHighlighter-VSIX
+        path: bin/Release/vs17.0/FlatBufferHighlighter.vsix
+
+    - name: Create Release and Upload Asset
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: bin/Release/vs17.0/FlatBufferHighlighter.vsix
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

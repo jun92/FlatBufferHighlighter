@@ -61,9 +61,82 @@ namespace FlatBufferHighlighter
             }
 
             string prevTextClean = prevNonEmptyLine.GetText();
-            GetBraceCounts(prevTextClean, out int prevOpenBraces, out int prevCloseBraces);
-
             int prevIndent = GetLineIndentation(prevTextClean, tabSize);
+
+            // If the previous non-empty line starts with '}', it should be aligned with its matching '{'
+            if (prevTextClean.TrimStart().StartsWith("}"))
+            {
+                int braceCount = 1;
+                for (int i = prevNonEmptyLine.LineNumber - 1; i >= 0; i--)
+                {
+                    var prevLine = snapshot.GetLineFromLineNumber(i);
+                    string prevText = prevLine.GetText();
+                    GetBraceCounts(prevText, out int openBraces, out int closeBraces);
+
+                    braceCount += closeBraces;
+                    braceCount -= openBraces;
+
+                    if (braceCount <= 0)
+                    {
+                        int correctIndent = GetLineIndentation(prevText, tabSize);
+                        
+                        // If the previous line's current indentation is different from the correct one,
+                        // adjust it asynchronously to fix the brace alignment.
+                        if (prevIndent != correctIndent)
+                        {
+                            var lineToAdjust = prevNonEmptyLine;
+                            var targetIndent = correctIndent;
+                            var currentTextBuffer = snapshot.TextBuffer;
+                            var syncContext = System.Threading.SynchronizationContext.Current;
+
+                            if (syncContext != null)
+                            {
+                                syncContext.Post(_ =>
+                                {
+                                    try
+                                    {
+                                        var latestSnapshot = currentTextBuffer.CurrentSnapshot;
+                                        var latestLine = latestSnapshot.GetLineFromLineNumber(lineToAdjust.LineNumber);
+                                        string latestText = latestLine.GetText();
+                                        if (latestText.TrimStart().StartsWith("}"))
+                                        {
+                                            int latestIndent = GetLineIndentation(latestText, tabSize);
+                                            if (latestIndent != targetIndent)
+                                            {
+                                                int leadingWhitespaceLength = latestText.Length - latestText.TrimStart().Length;
+                                                var span = new Span(latestLine.Start.Position, leadingWhitespaceLength);
+
+                                                bool convertTabs = _textView.Options.GetOptionValue(DefaultOptions.ConvertTabsToSpacesOptionId);
+                                                string newWhitespace;
+                                                if (convertTabs)
+                                                {
+                                                    newWhitespace = new string(' ', targetIndent);
+                                                }
+                                                else
+                                                {
+                                                    int tabCount = targetIndent / tabSize;
+                                                    int spaceCount = targetIndent % tabSize;
+                                                    newWhitespace = new string('\t', tabCount) + new string(' ', spaceCount);
+                                                }
+
+                                                currentTextBuffer.Replace(span, newWhitespace);
+                                            }
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        // Ignore exception to keep editor running smoothly
+                                    }
+                                }, null);
+                            }
+                        }
+
+                        return correctIndent;
+                    }
+                }
+            }
+
+            GetBraceCounts(prevTextClean, out int prevOpenBraces, out int prevCloseBraces);
 
             if (prevOpenBraces > prevCloseBraces)
             {
